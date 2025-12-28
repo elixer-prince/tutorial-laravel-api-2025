@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Post;
 
 class PostController extends Controller
 {
@@ -12,11 +13,9 @@ class PostController extends Controller
      */
     public function index()
     {
-        return response()->json([
-            'id' => 1,
-            'title' => 'Title 1',
-            'body' => 'This is a random body of text!'
-        ]);
+        $posts = Post::all();
+
+        return response()->json($posts);
     }
 
     /**
@@ -24,39 +23,47 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->only(["title", "body"]);
-        
-        // Add validation here later
-        // For now, just return the data
+        $data = $request->validate([
+            'title' => 'required|string|min:2',
+            'body' => 'required|string|min:2',
+        ]);
+        $data['author_id'] = 1;
 
-        return response()->json($data, 201);
+        $post = Post::create($data);
+
+        return response()->json($post, 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Post $post)
     {
-        return response()->json([
-            'id' => $id,
-            'title' => 'Title ' . $id,
-            'body' => 'This is the body for post ' . $id
-        ]);
+        return response()->json($post);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Post $post)
     {
-        return response()->json(['message' => 'Post updated successfully']);
+        $data = $request->validate([
+            'title' => 'required|string|min:2',
+            'body' => 'required|string|min:2',
+        ]);
+        
+        $post->update($data);
+        
+        return response()->json($post);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Post $post)
     {
-        return response()->json(['message' => 'Post deleted successfully']);
+        $post->delete();
+        
+        return response()->noContent();
     }
 }
