@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
+use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
@@ -14,7 +15,10 @@ class PostController extends Controller
      */
     public function index()
     {
-        return PostResource::collection(Post::with('author')->get());
+        $user = Auth::user();
+        $posts = $user->posts()->get();
+        
+        return PostResource::collection($posts);
     }
 
     /**
@@ -23,7 +27,7 @@ class PostController extends Controller
     public function store(StorePostRequest $request)
     {
         $validatedData = $request->validated();
-        $validatedData['author_id'] = 1;
+        $validatedData['author_id'] = $request->user()->id;
 
         $post = Post::create($validatedData);
 
@@ -35,7 +39,10 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        $post->load('author');
+        if (Auth::user()->id !== $post->author_id) {
+            abort(403, 'Access Forbidden!');
+        }
+
         return new PostResource($post);
     }
 
@@ -44,8 +51,12 @@ class PostController extends Controller
      */
     public function update(StorePostRequest $request, Post $post)
     {
+        if (Auth::user()->id !== $post->author_id) {
+            abort(403, 'Access Forbidden!');
+        }
+
         $validatedData = $request->validated();
-        $validatedData['author_id'] = 1;
+        $validatedData['author_id'] = $request->user()->id;
         
         $post->update($validatedData);
         
@@ -57,6 +68,10 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
+        if (Auth::user()->id !== $post->author_id) {
+            abort(403, 'Access Forbidden!');
+        }
+
         $post->delete();
 
         return response()->noContent();
